@@ -14,16 +14,10 @@ def experiment(poly, coeff):
 
     inputs = dataset['inputs']['test']
     targets = dataset['targets']['test']
-    sorted_test_values = []
-    for i in range(len(inputs)):
-        sorted_test_values.append((inputs[i], targets[i]))
-    sorted_test_values.sort(key=lambda x: x[0])
-
-    inputs = np.asarray(inputs)
-    targets = np.asarray(targets)
-    for i in range(len(sorted_test_values)):
-        inputs[i] = sorted_test_values[i][0]
-        targets[i] = sorted_test_values[i][1]
+    
+    indexes = np.argsort(inputs)
+    inputs = inputs[indexes]
+    targets = targets[indexes]
 
     predictions = model(inputs)
     targets = dataset['targets']['test']
