@@ -1,6 +1,6 @@
 from easydict import EasyDict
 
-from logreg.utils.enums import DataProcessTypes, WeightsInitType, GDStoppingCriteria
+from utils.enums import DataProcessTypes, WeightsInitType, GDStoppingCriteria
 
 cfg = EasyDict()
 

@@ -1,12 +1,10 @@
 from typing import Union
 from enum import Enum
-
 import numpy
-
-import logreg.utils.metrics as metrics
+import utils.metrics as metrics
 import numpy as np
 from easydict import EasyDict
-from logreg.datasets.base_dataset_classes import BaseClassificationDataset
+from datasets.base_dataset_classes import BaseClassificationDataset
 
 class WeightsDto:
 

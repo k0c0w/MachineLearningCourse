@@ -2,8 +2,8 @@ import numpy as np
 from easydict import EasyDict
 from sklearn.datasets import load_digits
 
-from logreg.datasets.base_dataset_classes import BaseClassificationDataset
-from logreg.utils.enums import DataProcessTypes, SetType
+from datasets.base_dataset_classes import BaseClassificationDataset
+from utils.enums import DataProcessTypes, SetType
 
 
 class Digits(BaseClassificationDataset):
