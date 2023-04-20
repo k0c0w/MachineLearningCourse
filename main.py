@@ -60,6 +60,12 @@ def digits():
     print_model_specs(cfg, dataset, 10)
 
 if __name__ == "__main__":
-    digits()
-    #d:7 entropy:0 elem: 2
+    from models.random_forest import RandomForestClassification
+    from datasets.digits_dataset import Digits
+    from config.logistic_regression_config import cfg
+    dataset = Digits(cfg)
+    forest = RandomForestClassification(5, 7, 2, 3, 7, 4)
+    forest.train(dataset.inputs_train, dataset.targets_train, 10)
+    r = forest.get_prediction(dataset.inputs_valid)
+    print(r[0], dataset.targets_valid[0])
 
