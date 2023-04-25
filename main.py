@@ -1,71 +1,51 @@
 import numpy as np
-import utils.metrics
-from utils.visualisation import Visualisation
-from models.decision_tree import BinaryDTRegression, BinaryDTClassification
+
+class ModelSpecs:
+    def __init__(self, model, valid_accuracy, test_accuracy):
+        self.model = model
+        self.valid_accuracy = valid_accuracy
+        self.test_accuracy = test_accuracy
 
 def map_predictions(old_prediction):
     return np.fromiter(map(np.argmax, old_prediction), dtype='int')
 
-
-def train_model_with_random_values(cfg, classes, inputs, targets) -> BinaryDTClassification:
-    max_depth = np.random.randint(cfg.max_depth)
-    min_elem = np.random.randint(cfg.max_min_elem)
-    min_entropy = np.random.randint(cfg.max_min_entropy)
-    dt = BinaryDTClassification(classes, max_depth, min_elem=min_elem, min_entropy=min_entropy)
-    dt.train(inputs, targets)
-    return dt
-
-
-def get_best_model(cfg, classes, dataset):
+def get_accuracy(model, inputs, targets):
     from utils.metrics import accuracy
-    best_accuracy, best_model = None, None
-    for i in range(cfg.train_repetition):
-        model = train_model_with_random_values(cfg, classes, dataset.inputs_train,
-                                                                     dataset.targets_train)
-        model_accuracy = accuracy(map_predictions(model(dataset.inputs_valid)), dataset.targets_valid)
-        if not best_accuracy or model_accuracy > best_accuracy:
-            best_accuracy = model_accuracy
-            best_model = model
+    return accuracy(map_predictions(model(inputs)), targets)
 
-    return best_model
+def random_search(models_number, dataset, nb_of_classes):
+    from models.random_forest import RandomForestClassification
+    from config.random_forest_config import cfg
+    m = []
+    for i in range(models_number):
+        max_dims = np.random.randint(cfg.min_dimensions_to_check, cfg.max_dimensions_to_check + 1)
+        treshold = np.random.randint(cfg.min_nb_thresholds, cfg.max_nb_thresholds + 1)
+        trees = np.random.randint(cfg.min_amount_of_trees, cfg.max_amount_of_trees + 1)
 
-def print_model_specs(cfg, dataset, classes):
-    from utils.metrics import accuracy, confusion_matrix
+        model = RandomForestClassification(trees, cfg.max_depth, cfg.min_entropy, cfg.min_elem, max_dims, treshold)
+        model.train(dataset.inputs_train, dataset.targets_train, nb_of_classes, cfg.bagging_train_method)
 
-    model = get_best_model(cfg, classes, dataset)
-    valid_predictions = map_predictions(model(dataset.inputs_valid))
-    test_predictions = map_predictions(model(dataset.inputs_test))
-    print(f'depth:{model.max_depth} entropy:{model.min_entropy} minimal elem: {model.min_elem}')
-    print(f'validation accuracy:{accuracy(valid_predictions, dataset.targets_valid)}')
-    print(f'test accuracy:{accuracy(test_predictions, dataset.targets_test)}')
-    print(f'validation confusion:\n{confusion_matrix(classes, valid_predictions, dataset.targets_valid)}')
-    print(f'test confusion:\n{confusion_matrix(classes, test_predictions, dataset.targets_test)}')
-
-def wine_quality():
-    from datasets.wine_quality_dataset import WineQuality
-    from config.dt_config import cfg
-    dataset = WineQuality(cfg)
-    print_model_specs(cfg, dataset, 2)
-
-def digits():
-    from datasets.digits_dataset import Digits
-    from config.logistic_regression_config import cfg
-    #31 1 4
-    # 44 1 1 ~78%
-    cfg.train_repetition = 100
-    cfg.max_depth = 50
-    cfg.max_min_entropy = 15
-    cfg.max_min_elem = 3
-    dataset = Digits(cfg)
-    print_model_specs(cfg, dataset, 10)
+        accuracy = get_accuracy(model, dataset.inputs_valid, dataset.targets_valid)
+        m.append((model, accuracy))
+    m.sort(key=lambda x: x[1], reverse=True)
+    return m
 
 if __name__ == "__main__":
-    from models.random_forest import RandomForestClassification
     from datasets.digits_dataset import Digits
     from config.logistic_regression_config import cfg
+    from utils.visualisation import Visualisation
+    from utils.metrics import confusion_matrix
     dataset = Digits(cfg)
-    forest = RandomForestClassification(5, 7, 2, 3, 7, 4)
-    forest.train(dataset.inputs_train, dataset.targets_train, 10)
-    r = forest.get_prediction(dataset.inputs_valid)
-    print(r[0], dataset.targets_valid[0])
+    models = random_search(30, dataset, 10)
+    best_models = []
+    for model, valid_accuracy in models[:10]:
+        test_accuracy = get_accuracy(model, dataset.inputs_test, dataset.targets_test)
+        best_models.append(ModelSpecs(model, valid_accuracy, test_accuracy))
+    Visualisation.visualize_plot(list(map(lambda x: f'({x.model.nb_trees},{x.model.max_nb_dim_to_check},{x.model.max_nb_thresholds})', best_models)),
+                                 list(map(lambda x: x.valid_accuracy, best_models)),
+                                 list(map(lambda x: f'test accuracy: {x.test_accuracy:.2f}', best_models)))
 
+    best_test_model = sorted(best_models, key=lambda x: x.test_accuracy, reverse=True)[0].model
+
+    print(confusion_matrix(10, map_predictions(best_test_model(dataset.inputs_test)), dataset.targets_test))
+    print(f'test accuracy:{get_accuracy(best_test_model, dataset.inputs_test, dataset.targets_test) * 100 :.2f}%')

@@ -1,3 +1,5 @@
+import numpy as np
+
 from models.decision_tree import BinaryDTClassification
 
 class RandomForestClassification():
@@ -10,17 +12,20 @@ class RandomForestClassification():
         self.max_nb_dim_to_check = max_nb_dim_to_check
         self.max_nb_thresholds = max_nb_thresholds
 
-    def train(self, inputs, targets, nb_classes):
+    def train(self, inputs, targets, nb_classes, bagging=False):
         self.trees = []
         params = (self.max_nb_dim_to_check, self.max_nb_thresholds)
-        #todo: распараллелить
+        max_inputs = inputs.shape[0]
         for i in range(self.nb_trees):
             tree = BinaryDTClassification(nb_classes, self.max_depth, self.min_entropy, self.min_elem)
-            tree.train(inputs, targets, params)
+            if bagging:
+                indexes = np.unique(np.random.randint(max_inputs, size=np.random.randint(self.min_elem, max_inputs)))
+                tree.train(inputs[indexes], targets[indexes])
+            else:
+                tree.train(inputs, targets, params)
             self.trees.append(tree)
 
-    #todo: распараллелить
-    def get_prediction(self, inputs):
+    def __call__(self, inputs):
         predictions = None
         for tree in self.trees:
             result = tree(inputs)

@@ -109,13 +109,14 @@ class BinaryDTBase(ABC):
             self.__build_tree(inputs[ind_left], targets[ind_left], node.left, depth + 1, disp_left_max)
             self.__build_tree(inputs[ind_right], targets[ind_right], node.right, depth + 1, disp_right_max)
 
-    # todo: переделать на цикл а не рекурсию
     def __find_prediction(self, input, node: Node):
-        if node.is_terminal:
-            return node.terminal_node_value
-        if input[node.split_ind] > node.split_val:
-            return self.__find_prediction(input, node.right)
-        return self.__find_prediction(input, node.left)
+        current = node
+        while not current.is_terminal:
+            if input[current.split_ind] > current.split_val:
+                current = current.right
+            else:
+                current = current.left
+        return current.terminal_node_value
 
     def __call__(self, inputs):
         result = np.ndarray(shape=len(inputs), dtype='object')
