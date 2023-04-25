@@ -34,3 +34,32 @@ class Visualisation():
 
         show_pictures(most_incorrect_images, "most incorrect predicted image class")
         show_pictures(most_correct_images, "most correct predicted image class")
+
+    @staticmethod
+    def visualize_plot(x, y, descriptions):
+        fig, ax = plt.subplots()
+        scatter = plt.scatter(x=x, y=y)
+        annotation = ax.annotate(text='', xy=(0,0), xytext=(15,15), textcoords='offset points',
+                                 bbox={'boxstyle': 'round', 'fc':'r'}, arrowprops={'arrowstyle': '->'})
+        annotation.set_visible(False)
+        def motion_hover(event):
+            annotation_visible = annotation.get_visible()
+            if event.inaxes == ax:
+                is_contained, annotation_index = scatter.contains(event)
+                if is_contained:
+                    data_point_loc = scatter.get_offsets()[annotation_index['ind'][0]]
+                    annotation.xy = data_point_loc
+                    model_ind = int(data_point_loc[0])
+                    text_label = descriptions[model_ind]
+                    annotation.set_text(text_label)
+                    annotation.set_visible(True)
+                    fig.canvas.draw_idle()
+                else:
+                    if annotation_visible:
+                        annotation.set_visible(False)
+                        fig.canvas.draw_idle()
+        fig.canvas.mpl_connect('motion_notify_event', motion_hover)
+
+        plt.xlabel("random forest model (M,L1,L2)")
+        plt.ylabel("accuracy on validation sample")
+        plt.show()
