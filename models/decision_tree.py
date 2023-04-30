@@ -188,3 +188,88 @@ class BinaryDTRegression(BinaryDTBase):
         normalized = targets - mean
 
         return np.sum(np.square(normalized)) / N
+
+class DecisionStump:
+    def __init__(self, inputs, targets, weights):
+        self.root = Node()
+        self.__all_dim = np.arange(inputs.shape[1])
+        self.__classes = np.unique(targets)
+
+        N = np.sum(weights)
+        entropy_val = self.__entropy(targets, weights, N)
+        self.__build_tree(inputs, targets, weights, self.root, 0, entropy_val, N)
+
+    def __entropy(self, targets, weights, N):
+        mask = targets == self.__classes[0]
+        if N == 0:
+            first, second = 1, 1
+        else:
+            first = np.sum(weights[mask]) / N
+            second = np.sum(weights[~mask]) / N
+        return -(first * np.log(first) + second * np.log(second))
+
+    def __build_tree(self, inputs, targets, weights, node, depth, entropy, N):
+        if depth == 1:
+            node.terminal_node_value = self.__get_terminal_node_prediction(targets, weights)
+        else:
+            node.split_ind, node.split_val, ind_left, ind_right, entropy_left, entropy_right = self.__build_splitting_node(weights, inputs, targets, entropy, N)
+            node.left, node.right = Node(), Node()
+            left_weights = weights[ind_left]
+            right_weights = weights[ind_right]
+            self.__build_tree(inputs[ind_left], targets[ind_left], left_weights, node.left, depth + 1, entropy_left, np.sum(left_weights))
+            self.__build_tree(inputs[ind_right], targets[ind_right], right_weights, node.right, depth + 1, entropy_right, np.sum(right_weights))
+
+    def __build_splitting_node(self, weights, inputs, targets, entropy, N):
+        chosen_dimension, chosen_t, left_Ifunc_value, right_Ifunc_value = None, None, None, None
+        max_information_gain = None
+        for d in self.__all_dim:
+            inputs_d_column = inputs[:, d]
+            for t in np.unique(inputs_d_column):
+                targets_left_ind, targets_right_ind = self.__split_targets_by_tau_and_d_value(inputs_d_column, t)
+                current_inf_gain, left_I, right_I = self.__inf_gain(weights, targets, targets_left_ind, targets_right_ind, entropy, N)
+                if not max_information_gain or current_inf_gain > max_information_gain:
+                    max_information_gain = current_inf_gain
+                    chosen_dimension, chosen_t = d, t
+                    left_Ifunc_value, right_Ifunc_value = left_I, right_I
+
+        right_ind = inputs[:, chosen_dimension] > chosen_t
+        left_ind = ~right_ind
+        return chosen_dimension, chosen_t, left_ind, right_ind, left_Ifunc_value, right_Ifunc_value
+
+    def __split_targets_by_tau_and_d_value(self, inputs, tau):
+        mask = inputs > tau
+
+        return ~mask, mask
+
+    def __inf_gain(self, weights, targets, left_ind, right_ind, entropy, N):
+        left_weights = weights[left_ind]
+        right_weights = weights[right_ind]
+        Ni0 = np.sum(left_weights)
+        Ni1 = np.sum(right_weights)
+        entropyLeft = self.__entropy(targets[left_ind], left_weights, N)
+        entropyRight = self.__entropy(targets[right_ind], right_weights, N)
+
+        return entropy - (Ni0 * entropyLeft  + Ni1 * entropyRight) / N, entropyLeft, entropyRight
+
+    def __get_terminal_node_prediction(self, targets, weights):
+        mask = targets == self.__classes[0]
+        k1_weights = np.sum(weights[mask])
+        k2_weights = np.sum(weights[~mask])
+
+        return self.__classes[0] if k1_weights > k2_weights else self.__classes[1]
+
+    def __call__(self, inputs):
+        def __get_prediction(input):
+            current = self.root
+            while not current.is_terminal:
+                if input[current.split_ind] > current.split_val:
+                    current = current.right
+                else:
+                    current = current.left
+            return current.terminal_node_value
+
+        predictions = np.zeros(inputs.shape[0])
+        for i in range(inputs.shape[0]):
+            predictions[i] = __get_prediction(inputs[i])
+
+        return predictions

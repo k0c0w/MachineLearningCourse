@@ -1,5 +1,8 @@
 import numpy as np
 
+import models.adaboost_students
+
+
 class ModelSpecs:
     def __init__(self, model, valid_accuracy, test_accuracy):
         self.model = model
@@ -30,7 +33,7 @@ def random_search(models_number, dataset, nb_of_classes):
     m.sort(key=lambda x: x[1], reverse=True)
     return m
 
-if __name__ == "__main__":
+def main():
     from datasets.digits_dataset import Digits
     from config.logistic_regression_config import cfg
     from utils.visualisation import Visualisation
@@ -41,7 +44,8 @@ if __name__ == "__main__":
     for model, valid_accuracy in models[:10]:
         test_accuracy = get_accuracy(model, dataset.inputs_test, dataset.targets_test)
         best_models.append(ModelSpecs(model, valid_accuracy, test_accuracy))
-    Visualisation.visualize_plot(list(map(lambda x: f'({x.model.nb_trees},{x.model.max_nb_dim_to_check},{x.model.max_nb_thresholds})', best_models)),
+    Visualisation.visualize_plot(list(
+        map(lambda x: f'({x.model.nb_trees},{x.model.max_nb_dim_to_check},{x.model.max_nb_thresholds})', best_models)),
                                  list(map(lambda x: x.valid_accuracy, best_models)),
                                  list(map(lambda x: f'test accuracy: {x.test_accuracy:.2f}', best_models)))
 
@@ -49,3 +53,11 @@ if __name__ == "__main__":
 
     print(confusion_matrix(10, map_predictions(best_test_model(dataset.inputs_test)), dataset.targets_test))
     print(f'test accuracy:{get_accuracy(best_test_model, dataset.inputs_test, dataset.targets_test) * 100 :.2f}%')
+
+if __name__ == "__main__":
+    from datasets.dataset_titanik import Titanic
+    dataset = Titanic("./datasets/titanik_train_data.csv", "./datasets/titanik_test_data.csv")()
+    adaBoost = models.adaboost_students.Adaboost(10)
+    adaBoost.train(dataset['train_input'], dataset['train_target'])
+    print(adaBoost(dataset['test_input']))
+    print(dataset['test_target'])
