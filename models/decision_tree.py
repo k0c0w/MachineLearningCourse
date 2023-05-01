@@ -206,6 +206,10 @@ class DecisionStump:
         else:
             first = np.sum(weights[mask]) / N
             second = np.sum(weights[~mask]) / N
+            if first == 0:
+                first = 1
+            if second == 0:
+                second = 1
         return -(first * np.log(first) + second * np.log(second))
 
     def __build_tree(self, inputs, targets, weights, node, depth, entropy, N):
