@@ -3,7 +3,8 @@ import numpy as np
 
 
 def MSE(predictions: np.ndarray, targets: np.ndarray) -> float:
-    pass
+    n = len(predictions)
+    return np.sum(np.square(predictions - targets)) / n
 
 
 def accuracy(predictions: np.ndarray, targets: np.ndarray) -> float:

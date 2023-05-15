@@ -1,3 +1,4 @@
+import numpy
 import numpy as np
 import pandas
 
@@ -7,8 +8,7 @@ from utils.enums import SetType
 
 class WineQuality(BaseClassificationDataset):
 
-    def __init__(self, cfg: EasyDict, shuffle_required=False):
-
+    def __init__(self, cfg: EasyDict, shuffle_required=False, regression=False):
         super(WineQuality, self).__init__(cfg.train_set_percent, cfg.valid_set_percent)
         wine_params = pandas.read_csv(cfg.data_set_path)
         self._inputs = wine_params.drop('type', axis=1).to_numpy(dtype='float')
@@ -21,6 +21,11 @@ class WineQuality(BaseClassificationDataset):
             value = unique_classes[i]
             int_classes[classes == value] = i
         self._targets = int_classes
+        if regression:
+            inputs = wine_params.drop('type', axis=1).drop('quality', axis=1).to_numpy(dtype='float')
+            self._inputs = numpy.c_[int_classes, inputs]
+            self._targets = wine_params['quality'].to_numpy()
+
         if shuffle_required:
             self.__shuffle_collection()
         self.divide_into_sets()

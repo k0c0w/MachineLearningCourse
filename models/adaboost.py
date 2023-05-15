@@ -1,7 +1,7 @@
 import numpy as np
 
 from datasets.dataset_titanik import Titanic
-from models.decision_tree import DecisionStump
+from models.decision_tree import ClassificationDecisionStump
 
 class Adaboost():
     def __init__(self, M, error_treshold_delta=0.001):
@@ -49,4 +49,4 @@ class Adaboost():
 
     @staticmethod
     def __train_weak_classifier(inputs, inputs_weights, targets):
-        return DecisionStump(inputs, targets, inputs_weights)
+        return ClassificationDecisionStump(inputs, targets, inputs_weights)
