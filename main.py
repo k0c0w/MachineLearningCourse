@@ -16,5 +16,4 @@ if __name__ == "__main__":
 
     print("MSE")
     print(utils.metrics.MSE(predictions, dataset.targets_test))
-    print("Accuracy")
-    print(utils.metrics.accuracy(predictions, dataset.targets_test))
+    
