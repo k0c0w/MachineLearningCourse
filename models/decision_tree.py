@@ -22,39 +22,38 @@ class BinaryDTBase(ABC):
         self.max_depth = max_depth
         self.min_entropy = min_entropy
         self.min_elem = min_elem
-        #self.max_nb_thresholds = max_nb_thresholds
         self.root = Node()
 
-    def train(self, inputs, targets):
+    def train(self, inputs, targets, random_mode:Optional[tuple]=None):
         entropy_val = self.__function_for_information_gain(targets, len(targets))
         self.__nb_dim = inputs.shape[1]
         self.__all_dim = np.arange(self.__nb_dim)
 
-        self.__get_axis, self.__get_threshold = self.__get_all_axis, self.__generate_all_threshold
+        if random_mode:
+            self.max_nb_dim_to_check, self.max_nb_thresholds = random_mode
+            self.__get_axis, self.__get_threshold = self.__get_random_axis, self.__generate_random_threshold
+        else:
+            self.__get_axis, self.__get_threshold = self.__get_all_axis, self.__generate_all_threshold
         self.__build_tree(inputs, targets, self.root, 1, entropy_val)
 
     def __get_random_axis(self):
-        pass
+        return np.random.choice(self.__nb_dim, self.max_nb_dim_to_check)
 
     def __get_all_axis(self):
-        pass
-
+        return self.__all_dim
 
     def __generate_all_threshold(self, inputs):
-        """
-        :param inputs: все элементы обучающей выборки выбранной оси
-        :return: все пороги, количество порогов определяется значением параметра self.max_nb_thresholds
-        Использовать np.min(inputs) и np.max(inputs)
-        """
-        pass
+        return np.unique(inputs)
 
     def __generate_random_threshold(self, inputs):
+        n = min(self.max_nb_thresholds, len(inputs))
+        min_value, max_value = np.min(inputs), np.max(inputs)
+        return np.random.uniform(min_value, max_value, size=n)
         """
         :param inputs: все элементы обучающей выборки(дошедшие до узла) выбранной оси
         :return: пороги, выбранные с помощью равномерного распределения.
         Количество порогов определяется значением параметра self.max_nb_thresholds
         """
-        pass
 
     def __inf_gain(self, targets_left, targets_right, root_value, N):
         left_value = self.__function_for_information_gain(targets_left, targets_left.size)
@@ -79,9 +78,9 @@ class BinaryDTBase(ABC):
     def __get_max_inf_gain_dimension_tau_pair(self, inputs, targets, root_value, N):
         chosen_dimension, chosen_t, left_Ifunc_value, right_Ifunc_value = None, None, None, None
         max_information_gain = None
-        for d in self.__all_dim:
+        for d in self.__get_axis():
             inputs_d_column = inputs[:, d]
-            for t in np.unique(inputs_d_column):
+            for t in self.__get_threshold(inputs_d_column):
                 targets_left, targets_right = self.__split_targets_by_tau_and_d_value(inputs_d_column, targets, t)
                 current_inf_gain, left_I_or_V, right_I_or_V = self.__inf_gain(targets_left, targets_right, root_value, N)
                 if not max_information_gain or current_inf_gain > max_information_gain:
@@ -111,11 +110,13 @@ class BinaryDTBase(ABC):
             self.__build_tree(inputs[ind_right], targets[ind_right], node.right, depth + 1, disp_right_max)
 
     def __find_prediction(self, input, node: Node):
-        if node.is_terminal:
-            return node.terminal_node_value
-        if input[node.split_ind] > node.split_val:
-            return self.__find_prediction(input, node.right)
-        return self.__find_prediction(input, node.left)
+        current = node
+        while not current.is_terminal:
+            if input[current.split_ind] > current.split_val:
+                current = current.right
+            else:
+                current = current.left
+        return current.terminal_node_value
 
     def __call__(self, inputs):
         result = np.ndarray(shape=len(inputs), dtype='object')
