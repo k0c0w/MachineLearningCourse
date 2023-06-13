@@ -1,5 +1,4 @@
 import numpy as np
-
 class ModelSpecs:
     def __init__(self, model, valid_accuracy, test_accuracy):
         self.model = model
