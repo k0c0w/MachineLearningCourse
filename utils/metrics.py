@@ -1,9 +1,10 @@
+
 import numpy
 import numpy as np
 
 
 def MSE(predictions: np.ndarray, targets: np.ndarray) -> float:
-    pass
+    return round(np.mean(np.square(np.subtract(targets, predictions))), 2)
 
 
 def accuracy(predictions: np.ndarray, targets: np.ndarray) -> float:

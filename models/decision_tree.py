@@ -188,7 +188,7 @@ class BinaryDTRegression(BinaryDTBase):
         normalized = targets - mean
 
         return np.sum(np.square(normalized)) / N
-
+      
 class DecisionStump:
     def __init__(self, inputs, targets, weights):
         self.root = Node()
