@@ -1,3 +1,5 @@
+
+import numpy
 import numpy as np
 
 
@@ -16,3 +18,23 @@ def confusion_matrix(classes_number: int, predicted_classes: np.ndarray, targets
         y = targets[i]
         matrix[y, x] += 1
     return matrix
+
+def precision(predictions, targets):
+    true_pos = np.logical_and(predictions == targets, np.logical_or(predictions > 0, predictions == True))
+    false_pos = np.logical_and(np.logical_or(predictions > 0, predictions == True), np.logical_or(targets < 0, targets == False))
+    true_pos_amount = predictions[true_pos].size
+    false_neg_amount = predictions[false_pos].size
+
+    return true_pos_amount / (true_pos_amount + false_neg_amount)
+
+def recall(predictions, targets):
+    true_pos = np.logical_and(predictions == targets, np.logical_or(predictions > 0, predictions == True))
+    false_neg = np.logical_and(np.logical_or(predictions < 0, predictions == False), np.logical_or(targets > 0, targets == True))
+
+    true_pos_amount = predictions[true_pos].size
+    false_neg_amount = predictions[false_neg].size
+
+    return true_pos_amount / (true_pos_amount + false_neg_amount)
+
+def f1_score(precision, recall):
+    return 2 * (precision * recall) / (precision + recall)
