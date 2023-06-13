@@ -3,6 +3,7 @@ import numpy as np
 from datasets.dataset_titanik import Titanic
 from models.decision_tree import ClassificationDecisionStump
 
+
 class Adaboost():
     def __init__(self, M, error_treshold_delta=0.001):
         self.M = M
